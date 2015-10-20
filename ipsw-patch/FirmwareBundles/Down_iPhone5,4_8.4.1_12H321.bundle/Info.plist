@@ -91,6 +91,19 @@
 	</dict>
 	<key>Name</key>
 	<string>iPhone5,4_8.4.1_12H321</string>
+	<key>BuildIdentitiesPatches</key>
+	<dict>
+		<key>UniqueBuildID</key>
+		<data>pV7hSBK7IXGOLLG7w6QzMenwvSw=</data>
+		<key>Manifest</key>
+		<dict>
+			<key>RestoreRamDisk</key>
+			<dict>
+				<key>Digest</key>
+				<data>IsceeVqQCLCQOuVYWRRghycOAE8=</data>
+			</dict>
+		</dict>
+	</dict>
 	<key>Platform</key>
 	<integer>1</integer>
 	<key>RamdiskMountVolume</key>
