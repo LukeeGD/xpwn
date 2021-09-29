@@ -2,12 +2,7 @@
 
 # Compile ipsw-patch
 
-if [[ ! $1 ]]; then
-    echo "./compile.sh [macos|linux] <daibutsuCFW>"
-    exit 1
-fi
-
-if [[ $2 == "daibutsuCFW" ]]; then
+if [[ $1 == "daibutsuCFW" ]]; then
     git clone https://github.com/LukeZGD/daibutsuCFW
     cd daibutsuCFW
     git pull --no-edit
@@ -22,15 +17,17 @@ elif [[ -e ipsw-patch/main.c.bak ]]; then
     mv ipsw-patch/main.c.bak ipsw-patch/main.c
 fi
 
-if [[ $1 == "macos" ]]; then
+if [[ $OSTYPE == "darwin"* ]]; then
+    platform="macos"
     if [[ ! -d /opt/local/lib2 ]]; then
         echo "Run ./prepare_macos.sh first"
         exit 1
     fi
     cmake=/opt/local/bin/cmake
 
-elif [[ $1 == "linux" ]]; then
-    . /etc/os-release
+elif [[ $OSTYPE == "linux"* ]]; then
+    platform="linux"
+    . /etc/os-release 2>/dev/null
     if [[ $UBUNTU_CODENAME != "focal" ]]; then
         echo "Ubuntu 20.04 only"
         exit 1
@@ -64,8 +61,28 @@ elif [[ $1 == "linux" ]]; then
         rm -rf tmp
     fi
 
+elif [[ $OSTYPE == "msys" ]]; then
+    platform="win"
+    cmake=/usr/bin/cmake
+    pacman -Sy --noconfirm --needed cmake libbz2-devel make msys2-devel openssl-devel zlib-devel
+
+    if [[ ! -e /usr/lib/libpng.a ]]; then
+        mkdir tmp
+        cd tmp
+        git clone https://github.com/glennrp/libpng
+
+        cd libpng
+        ./configure
+        make
+        make install
+        cd ..
+
+        cd ..
+        rm -rf tmp
+    fi
+
 else
-    echo "./compile.sh [macos|linux] <daibutsuCFW>"
+    echo "./compile.sh <daibutsuCFW>"
     exit 1
 fi
 
@@ -74,8 +91,8 @@ mkdir new bin
 cd new
 $cmake ..
 make ipsw
-cp ipsw-patch/ipsw ../bin/ipsw_$1
+cp ipsw-patch/ipsw ../bin/ipsw_$platform
 cd ..
 rm -rf new
 
-echo "Done! Build at bin/ipsw_$1"
+echo "Done! Build at bin/ipsw_$platform"
