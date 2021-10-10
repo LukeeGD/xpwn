@@ -2,34 +2,49 @@
 
 # Compile ipsw-patch
 
-if [[ $1 == "daibutsuCFW" ]]; then
-    git clone https://github.com/LukeZGD/daibutsuCFW
-    cd daibutsuCFW
-    git pull --no-edit
-    cp ../daibutsuCFW/src/xpwn/include/pref.h ../includes
-    if [[ ! -e ../ipsw-patch/main.c.bak ]]; then
-        mv ../ipsw-patch/main.c ../ipsw-patch/main.c.bak
+arg="ipsw"
+for i in "$@"; do
+    if [[ $i == "help" ]]; then
+        echo "Usage: $0 <all> <daibutsuCFW>"
+        exit
+    elif [[ $i == "daibutsuCFW" ]]; then
+        echo "* Build daibutsuCFW ipsw-patch"
+        daibutsu=1
+        git clone https://github.com/LukeZGD/daibutsuCFW
+        cd daibutsuCFW
+        git pull --no-edit
+        cp src/xpwn/include/pref.h ../includes
+        if [[ ! -e ../ipsw-patch/main.c.bak ]]; then
+            mv ../ipsw-patch/main.c ../ipsw-patch/main.c.bak
+        fi
+        cp src/xpwn/ipsw-patch/main.c ../ipsw-patch
+        cd ..
+    elif [[ $i == "all" ]]; then
+        echo "* Build all"
+        arg=
     fi
-    cp ../daibutsuCFW/src/xpwn/ipsw-patch/main.c ../ipsw-patch
-    cd ..
-elif [[ -e ipsw-patch/main.c.bak ]]; then
+done
+
+if [[ $daibutsu != 1 && -e ipsw-patch/main.c.bak ]]; then
     rm -f ipsw-patch/main.c
     mv ipsw-patch/main.c.bak ipsw-patch/main.c
 fi
 
 if [[ $OSTYPE == "darwin"* ]]; then
     platform="macos"
+    echo "* Platform: macOS"
     if [[ ! -d /opt/local/lib2 ]]; then
-        echo "Run ./prepare_macos.sh first"
+        echo "[Error] Run ./prepare_macos.sh first"
         exit 1
     fi
     cmake=/opt/local/bin/cmake
 
 elif [[ $OSTYPE == "linux"* ]]; then
     platform="linux"
+    echo "* Platform: Linux"
     . /etc/os-release 2>/dev/null
-    if [[ $UBUNTU_CODENAME != "focal" ]]; then
-        echo "Ubuntu 20.04 only"
+    if [[ -z $UBUNTU_CODENAME ]]; then
+        echo "[Error] Ubuntu only"
         exit 1
     fi
     export BEGIN_LDFLAGS="-Wl,--allow-multiple-definition"
@@ -38,7 +53,7 @@ elif [[ $OSTYPE == "linux"* ]]; then
 
     if [[ ! -e /usr/local/lib/libbz2.a || ! -e /usr/local/lib/libz.a ]]; then
         sudo apt update
-        sudo apt install -y pkg-config libtool automake g++ cmake libssl-dev libusb-1.0-0-dev libreadline-dev libpng-dev git autopoint aria2
+        sudo apt install -y pkg-config libtool automake g++ cmake libssl-dev libusb-1.0-0-dev libreadline-dev libpng-dev git autopoint aria2 ca-certificates
 
         mkdir tmp
         cd tmp
@@ -63,6 +78,7 @@ elif [[ $OSTYPE == "linux"* ]]; then
 
 elif [[ $OSTYPE == "msys" ]]; then
     platform="win"
+    echo "* Platform: Windows MSYS2"
     cmake=/usr/bin/cmake
     pacman -Sy --noconfirm --needed cmake libbz2-devel make msys2-devel openssl-devel zlib-devel
 
@@ -82,7 +98,7 @@ elif [[ $OSTYPE == "msys" ]]; then
     fi
 
 else
-    echo "./compile.sh <daibutsuCFW>"
+    echo "[Error] Unsupported platform"
     exit 1
 fi
 
@@ -90,9 +106,13 @@ rm -rf bin
 mkdir new bin
 cd new
 $cmake ..
-make ipsw
+make $arg
 cp ipsw-patch/ipsw ../bin/ipsw_$platform
 cd ..
-rm -rf new
 
-echo "Done! Build at bin/ipsw_$platform"
+if [[ -z $arg ]]; then
+    echo "Done! Build at new/"
+else
+    rm -rf new
+    echo "Done! Build at bin/ipsw_$platform"
+fi
