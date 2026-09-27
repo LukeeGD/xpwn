@@ -18,7 +18,7 @@
 #include <windows.h>
 #endif
 
-char endianness;
+//char endianness;
 
 static char* tmpFile = NULL;
 
@@ -35,7 +35,7 @@ static AbstractFile* openRoot(void** buffer, size_t* rootSize) {
 			GetTempFileName(tmpFilePath, "root", 0, tmpFileBuffer);
 			CloseHandle(CreateFile(tmpFilePath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_DELETE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL));
 #else
-			strcpy(tmpFileBuffer, "/tmp/rootXXXXXX");
+			strcpy(tmpFileBuffer, "../tmp/rootXXXXXX");
 			close(mkstemp(tmpFileBuffer));
 			FILE* tFile = fopen(tmpFileBuffer, "wb");
 			fclose(tFile);
