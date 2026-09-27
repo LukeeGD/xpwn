@@ -79,6 +79,7 @@ int main(int argc, char* argv[]) {
 	Volume* rootVolume;
 	size_t rootSize;
 	size_t preferredRootSize = 0;
+	size_t preferredRootSizeAdd = 0;
 	size_t minimumRootSize = 0;
 	
 	char* ramdiskFSPathInIPSW;
@@ -150,6 +151,14 @@ int main(int argc, char* argv[]) {
 			int size;
 			sscanf(argv[i + 1], "%d", &size);
 			preferredRootSize = size;
+			i++;
+			continue;
+		}
+
+		if(strcmp(argv[i], "-S") == 0) {
+			int size;
+			sscanf(argv[i + 1], "%d", &size);
+			preferredRootSizeAdd = size;
 			i++;
 			continue;
 		}
@@ -360,7 +369,7 @@ int main(int argc, char* argv[]) {
 	minimumRootSize -= minimumRootSize % 512;
 
 	if(preferredRootSize == 0) {	
-		preferredRootSize = defaultRootSize;
+		preferredRootSize = defaultRootSize + preferredRootSizeAdd;
 	}
 
 	rootSize =  preferredRootSize * 1024 * 1024;
