@@ -24,6 +24,7 @@ static void cacheRun(DMG* dmg, BLKXTable* blkx, int run) {
 	bufferSize = SECTOR_SIZE * blkx->runs[run].sectorCount;
 	
 	dmg->runData = (void*) malloc(bufferSize);
+	inBuffer = (void*) malloc(bufferSize);
 	memset(dmg->runData, 0, bufferSize);
 	
 	ASSERT(dmg->dmg->seek(dmg->dmg, blkx->dataStart + blkx->runs[run].compOffset) == 0, "fseeko");
@@ -36,7 +37,6 @@ static void cacheRun(DMG* dmg, BLKXTable* blkx, int run) {
 			strm.avail_in = 0;
 			strm.next_in = Z_NULL;
 			
-			inBuffer = (void*) malloc(bufferSize);
 			ASSERT(inflateInit(&strm) == Z_OK, "inflateInit");
 			
 			ASSERT((strm.avail_in = dmg->dmg->read(dmg->dmg, inBuffer, blkx->runs[run].compLength)) == blkx->runs[run].compLength, "fread");
@@ -53,7 +53,6 @@ static void cacheRun(DMG* dmg, BLKXTable* blkx, int run) {
 			} while (strm.avail_out == 0);
 			
 			ASSERT(inflateEnd(&strm) == Z_OK, "inflateEnd");
-			free(inBuffer);
 			break;
 		case BLOCK_RAW:
 			ASSERT((have = dmg->dmg->read(dmg->dmg, dmg->runData, blkx->runs[run].compLength)) == blkx->runs[run].compLength, "fread");
@@ -147,30 +146,6 @@ static void closeDmgFile(io_func* io) {
 	free(io);
 }
 
-static int dmgFileReadPlain(io_func* io, off_t location, size_t size, void *buffer) {
-	DMG* dmg;
-	AbstractFile *file;
-
-	dmg = (DMG*) io->data;
-
-	if(size == 0) {
-		return TRUE;
-	}
-
-	file = dmg->dmg;
-
-	if (file->seek(file, location + dmg->offset)) {
-		return FALSE;
-	}
-
-	return (file->read(file, buffer, size) == size);
-}
-
-static int dmgFileWritePlain(io_func* io, off_t location, size_t size, void *buffer) {
-	fprintf(stderr, "Error: writing to DMGs is not supported.\n");
-	return FALSE;
-}
-
 io_func* openDmgFile(AbstractFile* abstractIn) {
 	off_t fileLength;
 	UDIFResourceFile resourceFile;
@@ -187,24 +162,7 @@ io_func* openDmgFile(AbstractFile* abstractIn) {
 	
 	fileLength = abstractIn->getLength(abstractIn);
 	abstractIn->seek(abstractIn, fileLength - sizeof(UDIFResourceFile));
-	if (readUDIFResourceFile(abstractIn, &resourceFile, FALSE) != 0) {
-		// uncompressed dmg
-		dmg = (DMG*) malloc(sizeof(DMG));
-		dmg->dmg = abstractIn;
-		dmg->resources = NULL;
-		dmg->numBLKX = 0;
-		dmg->blkx = NULL;
-		dmg->runData = NULL;
-		dmg->runStart = 0;
-		dmg->runEnd = 0;
-		dmg->offset = 0;
-		toReturn = (io_func*) malloc(sizeof(io_func));
-		toReturn->data = dmg;
-		toReturn->read = &dmgFileReadPlain;
-		toReturn->write = &dmgFileWritePlain;
-		toReturn->close = &closeDmgFile; // yes, it is safe
-		return toReturn;
-	}
+	readUDIFResourceFile(abstractIn, &resourceFile);
 	
 	dmg = (DMG*) malloc(sizeof(DMG));
 	dmg->dmg = abstractIn;
@@ -261,16 +219,6 @@ io_func* openDmgFilePartition(AbstractFile* abstractIn, int partition) {
 	toReturn->read(toReturn, 0, SECTOR_SIZE, ddmBuffer);
 	ddm = (DriverDescriptorRecord*) ddmBuffer;
 	flipDriverDescriptorRecord(ddm, FALSE);
-	if (ddm->sbSig != DRIVER_DESCRIPTOR_SIGNATURE) {
-		// no pmap
-		if (((DMG*)toReturn->data)->blkx == NULL) {
-			// no compression
-			free(toReturn->data);
-			free(toReturn);
-			toReturn = IOFuncFromAbstractFile(abstractIn);
-		}
-		return toReturn;
-	}
 	BlockSize = ddm->sbBlkSize;
 
 	partitions = (Partition*) malloc(BlockSize);

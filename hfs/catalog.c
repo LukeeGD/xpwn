@@ -500,7 +500,7 @@ HFSPlusCatalogRecord* getRecordFromPath(const char* path, Volume* volume, char *
 }
 
 HFSPlusCatalogRecord* getRecordFromPath2(const char* path, Volume* volume, char **name, HFSPlusCatalogKey* retKey, char traverse) {
-	return getRecordFromPath3(path, volume, name, retKey, traverse, TRUE, kHFSRootFolderID);
+	return getRecordFromPath3(path, volume, name, retKey, TRUE, TRUE, kHFSRootFolderID);
 }
 
 HFSPlusCatalogRecord* getRecordFromPath3(const char* path, Volume* volume, char **name, HFSPlusCatalogKey* retKey, char traverse, char returnLink, HFSCatalogNodeID parentID) {
@@ -874,6 +874,7 @@ int removeFile(const char* fileName, Volume* volume) {
 
 		return TRUE;
 	} else {
+		free(parentFolder);
 		ASSERT(FALSE, "cannot find record");
 		return FALSE;
 	}

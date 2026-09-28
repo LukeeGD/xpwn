@@ -102,13 +102,12 @@ void addToOutput(OutputState** state, const char* fileName, void* buffer, const 
 	addToOutput2(state, fileName, buffer, bufferSize, NULL);
 }
 
-void removeFileFromOutputState(OutputState** state, const char* fileName, int exact) {
+void removeFileFromOutputState(OutputState** state, const char* fileName) {
 	OutputState* curFile;
 
 	curFile = *state;
 	while(curFile != NULL) {
-		OutputState* next = curFile->next;
-		if((exact ? strcmp(curFile->fileName, fileName) : fnmatch(fileName, curFile->fileName, 0)) == 0) {
+		if(strcmp(curFile->fileName, fileName) == 0) {
 			if(curFile->prev == NULL) {
 				*state = curFile->next;
 				(*state)->next->prev = NULL;
@@ -119,9 +118,9 @@ void removeFileFromOutputState(OutputState** state, const char* fileName, int ex
 			curFile->prev = NULL;
 			curFile->next = NULL;
 			releaseOutput(&curFile);
-			if (exact) return;
+			return;
 		}
-		curFile = next;
+		curFile = curFile->next;
 	}
 }
 

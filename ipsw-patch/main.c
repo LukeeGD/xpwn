@@ -18,7 +18,7 @@
 #include <windows.h>
 #endif
 
-//char endianness;
+// char endianness;
 
 static char* tmpFile = NULL;
 
@@ -467,7 +467,7 @@ int main(int argc, char* argv[]) {
 				doPatchInPlace(ramdiskVolume, fileValue->value, patchPath);
 				free(patchPath);
 			}
-		
+
 			patchDict = (Dictionary*) patchDict->dValue.next;
 		}
 	}
@@ -511,18 +511,12 @@ int main(int argc, char* argv[]) {
 		fixupBootNeuterArgs(rootVolume, unlockBaseband, selfDestruct, use39, use46);
 	}
 
-	StringValue* optionsValue = (StringValue*) getValueByKey(info, "RamdiskOptionsPath");
-	const char *optionsPlist = optionsValue ? optionsValue->value : "/usr/local/share/restore/options.plist";
-	createRestoreOptions(ramdiskVolume, optionsPlist, preferredRootSize, updateBB);
+	createRestoreOptions(ramdiskVolume, preferredRootSize, updateBB);
 	closeVolume(ramdiskVolume);
 	CLOSE(ramdiskFS);
 
 	if(updateRamdiskFSPathInIPSW)
-		removeFileFromOutputState(&outputState, updateRamdiskFSPathInIPSW, TRUE);
-
-	BoolValue *removeBB = (BoolValue*) getValueByKey(info, "DeleteBaseband");
-	if (removeBB && removeBB->value)
-		removeFileFromOutputState(&outputState, "Firmware/ICE*", FALSE);
+		removeFileFromOutputState(&outputState, updateRamdiskFSPathInIPSW);
 
 	closeVolume(rootVolume);
 	CLOSE(rootFS);
