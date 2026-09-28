@@ -44,7 +44,7 @@ prepare() {
         fi
 
     elif [[ $OSTYPE == "linux"* ]]; then
-        sslver="1.1.1w"
+        sslver="1.0.2u"
         platform="linux"
         echo "* Platform: Linux"
         . /etc/os-release

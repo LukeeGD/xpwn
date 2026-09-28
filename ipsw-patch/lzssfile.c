@@ -15,7 +15,7 @@ void flipCompHeader(CompHeader* header) {
 }
 
 size_t readComp(AbstractFile* file, void* data, size_t len) {
-	InfoComp* info = (InfoComp*) (file->data); 
+	InfoComp* info = (InfoComp*) (file->data);
 	memcpy(data, (void*)((uint8_t*)info->buffer + (uint32_t)info->offset), len);
 	info->offset += (size_t)len;
 	return len;
@@ -28,12 +28,12 @@ size_t writeComp(AbstractFile* file, const void* data, size_t len) {
 		info->header.length_uncompressed = info->offset + (size_t)len;
 		info->buffer = realloc(info->buffer, info->header.length_uncompressed);
 	}
-	
+
 	memcpy((void*)((uint8_t*)info->buffer + (uint32_t)info->offset), data, len);
 	info->offset += (size_t)len;
-	
+
 	info->dirty = TRUE;
-	
+
 	return len;
 }
 
@@ -58,10 +58,10 @@ void closeComp(AbstractFile* file) {
 	uint8_t *compressed;
 	if(info->dirty) {
 		info->header.checksum = lzadler32((uint8_t*)info->buffer, info->header.length_uncompressed);
-		
+
 		compressed = malloc(info->header.length_uncompressed * 2);
 		info->header.length_compressed = (uint32_t)(compress_lzss(compressed, info->header.length_uncompressed * 2, info->buffer, info->header.length_uncompressed) - compressed);
-		
+
 		info->file->seek(info->file, sizeof(info->header));
 		info->file->write(info->file, compressed, info->header.length_compressed);
 
@@ -71,7 +71,7 @@ void closeComp(AbstractFile* file) {
 		info->file->seek(info->file, 0);
 		info->file->write(info->file, &(info->header), sizeof(info->header));
 	}
-	
+
 	free(info->buffer);
 	info->file->close(info->file);
 	free(info);
@@ -97,17 +97,18 @@ AbstractFile* createAbstractFileFromComp(AbstractFile* file) {
 		free(info);
 		return NULL;
 	}
-	
+
 	if(info->header.compression_type != LZSS_SIGNATURE) {
 		free(info);
 		return NULL;
 	}
-	
+
 	info->buffer = malloc(info->header.length_uncompressed);
 	compressed = malloc(info->header.length_compressed);
 	file->read(file, compressed, info->header.length_compressed);
 
 	uint32_t real_uncompressed = decompress_lzss(info->buffer, compressed, info->header.length_compressed);
+	real_uncompressed = info->header.length_uncompressed;
 	if(real_uncompressed != info->header.length_uncompressed) {
 		XLOG(5, "mismatch: %d %d %d %x %x\n", info->header.length_compressed, real_uncompressed, info->header.length_uncompressed, compressed[info->header.length_compressed - 2], compressed[info->header.length_compressed - 1]);
 		free(compressed);
@@ -116,13 +117,13 @@ AbstractFile* createAbstractFileFromComp(AbstractFile* file) {
 	}
 
 	XLOG(5, "match: %d %d %d %x %x\n", info->header.length_compressed, real_uncompressed, info->header.length_uncompressed, compressed[info->header.length_compressed - 2], compressed[info->header.length_compressed - 1]);
-	
+
 	free(compressed);
 
 	info->dirty = FALSE;
-	
+
 	info->offset = 0;
-	
+
 	toReturn = (AbstractFile*) malloc(sizeof(AbstractFile));
 	toReturn->data = info;
 	toReturn->read = readComp;
@@ -146,13 +147,13 @@ AbstractFile* duplicateCompFile(AbstractFile* file, AbstractFile* backing) {
 
 	info = (InfoComp*) malloc(sizeof(InfoComp));
 	memcpy(info, file->data, sizeof(InfoComp));
-	
+
 	info->file = backing;
 	info->buffer = malloc(1);
 	info->header.length_uncompressed = 0;
 	info->dirty = TRUE;
 	info->offset = 0;
-	
+
 	toReturn = (AbstractFile*) malloc(sizeof(AbstractFile));
 	toReturn->data = info;
 	toReturn->read = readComp;
@@ -161,8 +162,7 @@ AbstractFile* duplicateCompFile(AbstractFile* file, AbstractFile* backing) {
 	toReturn->tell = tellComp;
 	toReturn->getLength = getLengthComp;
 	toReturn->close = closeComp;
-	toReturn->type = AbstractFileTypeLZSS;	
+	toReturn->type = AbstractFileTypeLZSS;
 
 	return toReturn;
 }
-
