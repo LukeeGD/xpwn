@@ -108,7 +108,6 @@ AbstractFile* createAbstractFileFromComp(AbstractFile* file) {
 	file->read(file, compressed, info->header.length_compressed);
 
 	uint32_t real_uncompressed = decompress_lzss(info->buffer, compressed, info->header.length_compressed);
-	real_uncompressed = info->header.length_uncompressed;
 	if(real_uncompressed != info->header.length_uncompressed) {
 		XLOG(5, "mismatch: %d %d %d %x %x\n", info->header.length_compressed, real_uncompressed, info->header.length_uncompressed, compressed[info->header.length_compressed - 2], compressed[info->header.length_compressed - 1]);
 		free(compressed);
@@ -166,3 +165,4 @@ AbstractFile* duplicateCompFile(AbstractFile* file, AbstractFile* backing) {
 
 	return toReturn;
 }
+
