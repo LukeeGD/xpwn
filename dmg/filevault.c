@@ -242,7 +242,10 @@ AbstractFile* createAbstractFileFromFileVault(AbstractFile* file, const char* ke
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	info->hmacCTX = HMAC_CTX_new();
-	HMAC_CTX_reset(info->hmacCTX);
+	if (!info->hmacCTX) {
+		fprintf(stderr, "Out of memory: HMAC CTX!\n");
+		exit(1);
+	}
 #else
 	info->hmacCTX = malloc(sizeof(*info->hmacCTX));
 	if (!info->hmacCTX) {
