@@ -130,7 +130,7 @@ typedef struct
     int  encrypt;
 #ifndef NOCRYPT
     unsigned long keys[3];     /* keys defining the pseudo-random sequence */
-    const unsigned long* pcrc_32_tab;
+    const z_crc_t* pcrc_32_tab;
     int crypt_header_size;
 #endif
 } curfile_info;
@@ -751,9 +751,9 @@ extern int ZEXPORT zipOpenNewFileInZip3 (file, filename, zipfi,
     zi->ci.flag = 0;
     if ((level==8) || (level==9))
       zi->ci.flag |= 2;
-    if ((level==2))
+    if (level==2)
       zi->ci.flag |= 4;
-    if ((level==1))
+    if (level==1)
       zi->ci.flag |= 6;
     if (password != NULL)
       zi->ci.flag |= 1;
@@ -865,6 +865,10 @@ extern int ZEXPORT zipOpenNewFileInZip3 (file, filename, zipfi,
 
         if (err==Z_OK)
             zi->ci.stream_initialised = 1;
+    }
+    else
+    {
+        zi->ci.stream.data_type = Z_UNKNOWN;
     }
 #    ifndef NOCRYPT
     zi->ci.crypt_header_size = 0;
