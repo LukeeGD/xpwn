@@ -23,13 +23,53 @@ prepare() {
         echo "* Platform: macOS"
         port=/opt/local/bin/port
         lib=/opt/local/lib
-        cmake=/opt/local/bin/cmake
 
         if [[ $1 == undo ]]; then
             sudo mv ${lib}2/* ${lib}
             sudo rm -rf ${lib}2
             exit 0
-        elif [[ ! -d ${lib}2 ]]; then
+        fi
+
+        export PATH="$PATH:/Applications/CMake.app/Contents/bin"
+        cmake=$(command -v cmake)
+        if [[ -z $cmake ]]; then
+            VERS=`sw_vers -productVersion`
+            VMAJ=`echo $VERS |cut -d "." -f 1`
+            VMIN=`echo $VERS |cut -d "." -f 2`
+
+            # cmake
+            if [ $VMAJ -le 10 ] && [ $VMIN -lt 13 ]; then
+            if [ $VMIN -lt 10 ]; then
+                # < macOS 10.10
+                CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.18.6/cmake-3.18.6-Darwin-x86_64.tar.gz
+                CMAKE_HASH=fe09f28c2bfe26a7b7daf0ff9444175f410bae36
+            else
+                # >= macOS 10.10
+                CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-macos10.10-universal.tar.gz
+                CMAKE_HASH=668e554a7fa7ad57eaf73d374774afd7fd25f98f
+            fi
+            else
+                # >= macOS 10.13
+                CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.20.1/cmake-3.20.1-macos-universal.tar.gz
+                CMAKE_HASH=43cc6b91ca2ec711f3a1a3eafb970f9389e795e2
+            fi
+
+            echo "*** Installing cmake (in-tree)"
+            CMAKE_TGZ=`basename $CMAKE_URL`
+            echo "-- Downloading cmake"
+            curl -LfsS -o "$CMAKE_TGZ" "$CMAKE_URL" || exit 1
+            CMAKE_PATH="`basename $CMAKE_TGZ .tar.gz`"
+            echo "-- Extracting cmake (in tree)"
+            tar xzf "$CMAKE_TGZ"
+            cp -r "$CMAKE_PATH/CMake.app" /Applications
+            if ! test -x "`which cmake`"; then
+                echo "FATAL: cmake not found in \$PATH after trying to install it locally?!"
+                exit 1
+            fi
+            echo "* cmake: done"
+        fi
+
+        if [[ ! -d ${lib}2 ]]; then
             if [[ ! -e $port ]]; then
                 echo "MacPorts not installed!"
                 exit 1
@@ -44,7 +84,7 @@ prepare() {
         fi
 
     elif [[ $OSTYPE == "linux"* ]]; then
-        sslver="1.0.2u"
+        sslver="1.1.1w"
         platform="linux"
         echo "* Platform: Linux"
         . /etc/os-release
@@ -93,15 +133,15 @@ prepare() {
             tar -zxvf openssl-$sslver.tar.gz
             cd openssl-$sslver
             if [[ $(uname -m) == "a"* && $(getconf LONG_BIT) == 64 ]]; then
-                ./Configure no-ssl3-method linux-aarch64 "-Wa,--noexecstack -fPIC" --prefix=/usr/local
+                ./Configure no-ssl3-method linux-aarch64 "-Wa,--noexecstack -fPIC"
             elif [[ $(uname -m) == "a"* ]]; then
                 ./Configure no-ssl3-method linux-generic32 "-Wa,--noexecstack -fPIC"
             else
-                ./Configure no-ssl3-method enable-ec_nistp_64_gcc_128 linux-x86_64 "-Wa,--noexecstack -fPIC" --prefix=/usr/local
+                ./Configure no-ssl3-method enable-ec_nistp_64_gcc_128 linux-x86_64 "-Wa,--noexecstack -fPIC"
             fi
             make $JNUM depend
             make $JNUM
-            sudo make install_sw
+            sudo make install_sw install_ssldirs
             sudo rm -rf /usr/local/lib/libcrypto.so* /usr/local/lib/libssl.so*
             cd ..
 
