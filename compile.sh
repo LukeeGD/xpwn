@@ -44,7 +44,7 @@ prepare() {
         fi
 
     elif [[ $OSTYPE == "linux"* ]]; then
-        sslver="1.1.1w"
+        sslver="1.0.2u"
         platform="linux"
         echo "* Platform: Linux"
         . /etc/os-release
@@ -93,15 +93,15 @@ prepare() {
             tar -zxvf openssl-$sslver.tar.gz
             cd openssl-$sslver
             if [[ $(uname -m) == "a"* && $(getconf LONG_BIT) == 64 ]]; then
-                ./Configure no-ssl3-method linux-aarch64 "-Wa,--noexecstack -fPIC"
+                ./Configure no-ssl3-method linux-aarch64 "-Wa,--noexecstack -fPIC" --prefix="/usr/local"
             elif [[ $(uname -m) == "a"* ]]; then
-                ./Configure no-ssl3-method linux-generic32 "-Wa,--noexecstack -fPIC"
+                ./Configure no-ssl3-method linux-generic32 "-Wa,--noexecstack -fPIC" --prefix="/usr/local"
             else
-                ./Configure no-ssl3-method enable-ec_nistp_64_gcc_128 linux-x86_64 "-Wa,--noexecstack -fPIC"
+                ./Configure no-ssl3-method enable-ec_nistp_64_gcc_128 linux-x86_64 "-Wa,--noexecstack -fPIC" --prefix="/usr/local"
             fi
             make $JNUM depend
             make $JNUM
-            sudo make install_sw install_ssldirs
+            sudo make install_sw
             sudo rm -rf /usr/local/lib/libcrypto.so* /usr/local/lib/libssl.so*
             cd ..
 
