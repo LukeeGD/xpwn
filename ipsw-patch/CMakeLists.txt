@@ -1,22 +1,15 @@
+INCLUDE(FindOpenSSL)
 INCLUDE(FindZLIB)
 INCLUDE(FindBZip2)
 INCLUDE(FindPNG)
-
-FIND_LIBRARY(CRYPTO_LIBRARIES crypto
-      PATHS
-      /usr/lib
-      /usr/local/lib
-      ${CMAKE_FIND_ROOT_PATH}/lib
-      ${CMAKE_FIND_ROOT_PATH}/local/lib
-   )
 
 IF(NOT ZLIB_FOUND)
 	message(FATAL_ERROR "zlib is required for ipsw!")
 ENDIF(NOT ZLIB_FOUND)
 
-IF(NOT CRYPTO_LIBRARIES)
-	message(FATAL_ERROR "libcrypto is required for ipsw!")
-ENDIF(NOT CRYPTO_LIBRARIES)
+IF(NOT OPENSSL_FOUND)
+	message(FATAL_ERROR "OpenSSL is required for ipsw!")
+ENDIF(NOT OPENSSL_FOUND)
 
 IF(NOT BZIP2_FOUND)
 	message(FATAL_ERROR "libbz2 is required for ipsw!")
@@ -26,6 +19,7 @@ IF(NOT PNG_FOUND)
 	message(FATAL_ERROR "libpng is required for ipsw!")
 ENDIF(NOT PNG_FOUND)
 
+include_directories(${OPENSSL_INCLUDE_DIR})
 include_directories(${ZLIB_INCLUDE_DIR})
 
 IF(NOT APPLE)
